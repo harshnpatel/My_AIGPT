@@ -5,3 +5,126 @@ langchain
 PyPDF2
 faiss-cpu
 langchain_google_genai
+
+
+Document AI Chatbot with Ollama (Llama 3.2) & Gemini API
+This Streamlit-powered application provides an interactive chat interface that allows users to upload and analyze various document types (PDFs, PowerPoint, Excel) and then engage in intelligent Q&A with advanced Large Language Models (LLMs). It integrates with both local Ollama models (specifically Llama 3.2) and Google's Gemini API, offering flexibility and powerful conversational AI capabilities.
+
+Features
+Multi-Document Support: Seamlessly extract text from PDFs (.pdf), PowerPoint presentations (.pptx, .ppt), and Excel spreadsheets (.xlsx, .xls).
+
+Intelligent Q&A (RAG): Utilizes a Retrieval Augmented Generation (RAG) approach. Uploaded documents are processed, chunked, and converted into embeddings, stored in a FAISS vector database. When a user asks a question, the relevant document context is retrieved and provided to the LLM, enabling accurate and context-aware responses.
+
+Flexible LLM Integration:
+
+Ollama (Llama 3.2): Connects to a locally running Ollama instance to leverage open-source models like Llama 3.2 for private and customizable AI interactions.
+
+Google Gemini API: Integrates with Google's powerful gemini-1.5-flash model for robust, scalable AI capabilities.
+
+Persistent Chat History: All chat conversations are automatically saved and loaded based on unique session IDs, allowing users to revisit and continue previous discussions. Chats are categorized by time (Today, Yesterday, Previous 7/30 Days, Older) for easy navigation.
+
+Intuitive User Interface:
+
+Fixed Input Bar: A modern, integrated chat input bar at the bottom of the screen, featuring a + button, text input, "Canvas" and "Deep Research" action buttons (placeholders for future functionality), and a microphone button.
+
+File Upload Popup: Clicking the + button reveals a clean, floating popup for uploading documents or adding from a placeholder "Drive" option. Documents are processed immediately upon upload.
+
+Clear State Indicators: Provides visual cues for document processing status and vector store availability.
+
+Technologies Used
+Python 3.x
+
+Streamlit: For building the interactive web application UI.
+
+PyPDF2: For extracting text from PDF files.
+
+python-pptx: For extracting text from PowerPoint presentations.
+
+pandas: For reading and processing data from Excel files.
+
+LangChain:
+
+RecursiveCharacterTextSplitter: For efficient text chunking.
+
+GoogleGenerativeAIEmbeddings: For generating text embeddings.
+
+FAISS: For creating and managing the vector store for document retrieval.
+
+Google Generative AI SDK (google-generativeai): For interacting with the Gemini API.
+
+Requests: For making HTTP requests to the Ollama API.
+
+python-dotenv: For managing API keys securely.
+
+UUID: For generating unique session IDs.
+
+Custom CSS/HTML: For highly customized UI elements to match specific design requirements.
+
+Font Awesome: For icons (loaded via CDN).
+
+Setup and Installation
+1. Clone the Repository
+git clone <your-repository-url>
+cd <your-repository-name>
+
+2. Create a Virtual Environment (Recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+3. Install Dependencies
+Create a requirements.txt file in your project's root directory with the following content:
+
+streamlit
+PyPDF2
+langchain
+langchain-google-genai
+python-dotenv
+requests
+pandas
+python-pptx
+faiss-cpu # Use faiss-gpu if you have a compatible GPU
+
+Then install them:
+
+pip install -r requirements.txt
+
+4. Configure API Keys
+Create a .env file in the root directory of your project and add your Google API Key:
+
+GOOGLE_API_KEY="YOUR_GOOGLE_GEMINI_API_KEY"
+
+5. Set Up Ollama (Optional, for Llama 3.2)
+If you plan to use the "Llama 3.2 (Ollama)" model, ensure you have Ollama installed and running locally.
+
+Download Ollama: Follow the instructions on the Ollama website.
+
+Pull the Llama 3.2 Model:
+
+ollama pull llama3.2
+
+(Note: The model name in the code is currently llama3.2. Adjust if your desired Ollama model has a different name).
+
+6. Run the Streamlit Application
+streamlit run your_app_file_name.py # Replace your_app_file_name.py with the actual name of your Python script (e.g., app.py or main.py)
+
+Usage
+Launch the App: Run the Streamlit command as shown above.
+
+Choose LLM: Select your preferred LLM ("Llama 3.2 (Ollama)" or "Gemini API") from the sidebar.
+
+Upload Documents: Click the + button in the chat input bar at the bottom. A popup will appear where you can upload PDF, PowerPoint, or Excel files. The application will automatically process them and create a document index.
+
+Chat: Type your questions into the input box. If documents were processed, the AI will use the document content to provide more accurate answers (RAG).
+
+Manage Chats: Use the "New Chat" button to start fresh or click on recent chat titles in the sidebar to load previous conversations.
+
+Project Structure
+.
+├── your_app_file_name.py  # Main Streamlit application script
+├── .env                  # Environment variables (e.g., GOOGLE_API_KEY)
+├── chat_history/         # Directory to store chat session JSON files
+│   ├── <session_id>.json
+│   └── ...
+└── faiss_index/          # Directory to store FAISS vector store index files
+    ├── index.faiss
+    └── index.pkl
