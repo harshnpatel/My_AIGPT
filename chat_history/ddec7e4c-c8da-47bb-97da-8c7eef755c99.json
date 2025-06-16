@@ -1,0 +1,52 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "what is \u0928\u093f\u0935\u0932 \u092e\u0942\u0932\u094d\u092f \u0915\u0940 \u0905\u092a\u0947\u0915\u094d\u0937\u093e\u090f?"
+    },
+    {
+      "role": "assistant",
+      "content": "\u0928\u093f\u0935\u0932 \u092e\u0942\u0932\u094d\u092f \u0915\u0940 \u0905\u092a\u0947\u0915\u094d\u0937\u093e \u0915\u093f\u0938\u0940 \u0938\u094d\u091f\u0949\u0915 \u092a\u0930 \u0928\u093f\u0930\u094d\u0927\u093e\u0930\u093f\u0924 \u0939\u094b\u0924\u0940 \u0939\u0948 \u091c\u092c \u0909\u0938 \u0938\u094d\u091f\u0949\u0915 \u0915\u0947 \u0935\u093e\u0938\u094d\u0924\u0935\u093f\u0915 \u092e\u0942\u0932\u094d\u092f \u0914\u0930 \u0907\u0938\u0915\u0947 \u092b\u0902\u0921\u094d\u0938 \u0915\u094b \u0932\u0947\u0915\u0930 \u092a\u094d\u0930\u092c\u0902\u0927\u0915 \u092f\u093e \u0928\u093f\u0935\u0947\u0936\u0915\u094b\u0902 \u0915\u0947 \u092c\u0940\u091a \u0938\u0939\u092e\u0924\u093f \u092c\u0928 \u091c\u093e\u0924\u0940 \u0939\u0948\u0964"
+    },
+    {
+      "role": "user",
+      "content": "what is \u0928\u093f\u0935\u0932 \u092e\u0942\u0932\u094d\u092f \u0915\u0940 \u0905\u092a\u0947\u0915\u094d\u0937\u093e\u090f?"
+    },
+    {
+      "role": "assistant",
+      "content": "The provided text mentions a minimum net asset value (\u0928\u093f\u0935\u0932 \u092e\u0942\u0932\u094d\u092f) requirement in several places, but doesn't explicitly state the *expectation* for net asset value.  For example, it states that for a registered FME (Khudha),  the  net asset value should be at least 2 billion USD  (or other specified amount). However, it does not specify what the expectation is if it is below this value.  Therefore, the answer is not available in the provided context.\n"
+    },
+    {
+      "role": "user",
+      "content": "what is \u0928\u093f\u0935\u0932 \u092e\u0942\u0932\u094d\u092f \u0915\u0940 \u0905\u092a\u0947\u0915\u094d\u0937\u093e\u090f in details with all points"
+    },
+    {
+      "role": "assistant",
+      "content": "The provided text details net worth expectations under the heading \"\u0928\u093f\u0935\u0932 \u092e\u0942\u0932\u094d\u092f \u0915\u0940 \u0905\u092a\u0947\u0915\u094d\u0937\u093e\u090f\u0902\" (Net Worth Expectations) in section 8.  Here's a breakdown of the points:\n\n**(1) Entities seeking registration as an FME:** Must comply with the net worth requirements specified in Schedule II of these regulations or other criteria specified by the Authority.\n\n**(2) Entities operating as a branch:** Must comply with the minimum net worth requirements for their operations in the IFSC, as specified in these regulations. This can be maintained at the parent entity level, but the parent entity must ensure sufficient funds are available for the branch's day-to-day operations.\n\n**(3) The minimum net worth requirements mentioned above are separate and in addition to any minimum net worth requirements applicable to other activities within or outside the IFSC.**\n"
+    },
+    {
+      "role": "user",
+      "content": "what is sales?"
+    },
+    {
+      "role": "assistant",
+      "content": "The answer is not available in the provided context.\n"
+    },
+    {
+      "role": "user",
+      "content": "what is sales in sample-report?"
+    },
+    {
+      "role": "assistant",
+      "content": "The answer is not available in the provided context.  The sample report mentions sales projections, but no specific sales figures are given.\n"
+    }
+  ],
+  "doc_info": {
+    "processed_files": [
+      "85-ifsca-fund-managemnet-regulations-202519022025125910.pdf",
+      "sample-report.pdf"
+    ],
+    "vector_store_path": "faiss_indices\\ddec7e4c-c8da-47bb-97da-8c7eef755c99_index"
+  }
+}
+# LastModified: 2025-05-28T12:36:41.877269

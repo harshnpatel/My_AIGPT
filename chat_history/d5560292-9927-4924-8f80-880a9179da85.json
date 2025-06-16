@@ -1,0 +1,17 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "112"
+    },
+    {
+      "role": "assistant",
+      "content": "112 is a whole number, an even number, and a composite number (meaning it has factors other than 1 and itself).  Its prime factorization is 2<sup>4</sup> x 7.  It's also divisible by 1, 2, 4, 7, 8, 14, 16, 28, 56, and 112.  In some contexts, it might represent a quantity, a measurement (e.g., 112 pounds), or a code (e.g., a phone number or an emergency number in some regions).\n"
+    }
+  ],
+  "doc_info": {
+    "processed_files": [],
+    "vector_store_path": null
+  }
+}
+# LastModified: 2025-06-13T18:47:48.790301

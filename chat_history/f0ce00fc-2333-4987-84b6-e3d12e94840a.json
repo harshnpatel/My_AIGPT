@@ -1,0 +1,85 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "what is \u0928\u093f\u0935\u0932 \u092e\u0942\u0932\u094d\u092f \u0915\u0940 \u0905\u092a\u0947\u0915\u094d\u0937\u093e\u090f in detail?"
+    },
+    {
+      "role": "assistant",
+      "content": "The provided text details the net worth requirements for entities seeking registration as an FME (Fund Management Entity) in sections 8 and 16.\n\n**Section 8 (\u0928\u093f\u0935\u0932 \u092e\u0942\u0932\u094d\u092f \u0915\u0940 \u0905\u092a\u0947\u0915\u094d\u0937\u093e\u090f\u0902):**  An entity seeking registration as an FME must comply with the net worth requirements specified in Schedule II of these regulations or any other threshold specified by the authority from time to time.  An entity operating as a branch must comply with the minimum net worth requirements specified in these regulations for its activities in the IFSC (International Financial Services Centre), which may be maintained at the level of the parent entity. The parent entity will ensure sufficient funds are available for the day-to-day operations of the branch.  These minimum net worth requirements are separate from and in addition to any minimum net worth requirements applicable for other activities within or outside the IFSC.\n\n**Section 9 (\u0909\u092a\u092f\u0941\u0924\u0924 \u090f\u0935\u0902 \u0909\u0927\u093f\u0924 \u0905\u092a\u0947\u0915\u094d\u0937\u093e\u090f\u0902):** This section focuses on the suitability and propriety of the applicant and its key personnel, not directly on net worth, but it is relevant as unsuitable individuals would not be granted registration.  The section details the criteria for determining suitability and propriety.  Note that Section 8 is the one that directly addresses net worth requirements.\n"
+    },
+    {
+      "role": "user",
+      "content": "what is sales"
+    },
+    {
+      "role": "assistant",
+      "content": "The provided text mentions sales projections and a market size of $50 billion, with a user satisfaction of 85% and a growth rate of 10%.  However, it does not define what \"sales\" are in a general sense.\n"
+    },
+    {
+      "role": "user",
+      "content": "Give me details of On the Rish file"
+    },
+    {
+      "role": "assistant",
+      "content": "The answer is not available in the provided context.\n"
+    },
+    {
+      "role": "user",
+      "content": "Give me details of On the Rise file"
+    },
+    {
+      "role": "assistant",
+      "content": "The answer is not available in the provided context.\n"
+    },
+    {
+      "role": "user",
+      "content": "Give me details of excel file"
+    },
+    {
+      "role": "assistant",
+      "content": "The answer is not available in the provided context.  The provided text is a sample of a multi-page PDF report, not an Excel file.\n"
+    },
+    {
+      "role": "user",
+      "content": "On the Rise Bakery Web Traffic"
+    },
+    {
+      "role": "assistant",
+      "content": "The answer is not available in the provided context.\n"
+    },
+    {
+      "role": "user",
+      "content": "what is 'On the Rise Bakery Web Traffic'"
+    },
+    {
+      "role": "assistant",
+      "content": "The answer is not available in the provided context.\n"
+    },
+    {
+      "role": "user",
+      "content": "give me details of xlsx file"
+    },
+    {
+      "role": "assistant",
+      "content": "The answer is not available in the provided context.  The provided text is a PDF, not an XLSX file.  Therefore, I cannot give you details about an XLSX file based on this document.\n"
+    },
+    {
+      "role": "user",
+      "content": "On the Rise Bakery Web Traffic.xlsx"
+    },
+    {
+      "role": "assistant",
+      "content": "The answer is not available in the provided context.\n"
+    }
+  ],
+  "doc_info": {
+    "processed_files": [
+      "85-ifsca-fund-managemnet-regulations-202519022025125910.pdf",
+      "sample-report.pdf",
+      "On the Rise Bakery Web Traffic.xlsx"
+    ],
+    "vector_store_path": "faiss_indices\\f0ce00fc-2333-4987-84b6-e3d12e94840a_index"
+  }
+}
+# LastModified: 2025-05-28T12:50:30.589748
