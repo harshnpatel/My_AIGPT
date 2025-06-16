@@ -1,0 +1,370 @@
+import streamlit as st
+
+from PyPDF2 import PdfReader
+
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+import os
+
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+import google.generativeai as genai
+
+from langchain.vectorstores import FAISS
+
+from dotenv import load_dotenv
+
+import requests
+
+import json
+ 
+load_dotenv()
+
+os.getenv("GOOGLE_API_KEY")
+
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+ 
+# --- Helper Functions (unchanged, as they relate to PDF processing) ---
+
+def get_pdf_text(pdf_docs):
+
+    text = ""
+
+    for pdf in pdf_docs:
+
+        pdf_reader = PdfReader(pdf)
+
+        for page in pdf_reader.pages:
+
+            text += page.extract_text()
+
+    return text
+ 
+def get_text_chunks(text):
+
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=10000, chunk_overlap=1000)
+
+    chunks = text_splitter.split_text(text)
+
+    return chunks
+ 
+def get_vector_store(text_chunks):
+
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+
+    vector_store = FAISS.from_texts(text_chunks, embedding=embeddings)
+
+    vector_store.save_local("faiss_index")
+ 
+# --- New Model Selection Function ---
+
+def get_llm_response(user_question, context_text, selected_model):
+
+    """
+
+    Generates a response from either Llama 3.2 (Ollama) or Gemini,
+
+    depending on the selected_model.
+
+    """
+
+    if selected_model == "Llama 3.2 (Ollama)":
+
+        return get_ollama_llama_response(user_question, context_text)
+
+    elif selected_model == "Gemini API":
+
+        return get_gemini_response(user_question, context_text)
+
+    else:
+
+        raise ValueError(f"Invalid model selection: {selected_model}")
+ 
+# --- Ollama Function ---
+
+def get_ollama_llama_response(user_question, context_text):
+
+    """Generates a response from Llama 3.2 via Ollama."""
+
+    ollama_url = "http://localhost:11434/api/generate"
+
+    ollama_model = "llama3.2"
+ 
+    prompt = f"""
+
+    You are an AI assistant tasked with answering questions based on the provided document context.
+
+    Instructions:
+
+    - Answer the question as detailed as possible from the provided context.
+
+    - Make sure to provide all the details from the context.
+
+    - If the answer is not available in the context, explicitly state "answer is not available in the context".
+
+    - Do not provide information not present in the context.
+ 
+    Context:
+
+    {context_text}
+ 
+    Question:
+
+    {user_question}
+ 
+    Answer:
+
+    """
+
+    payload = {
+
+        "model": ollama_model,
+
+        "prompt": prompt,
+
+        "stream": False,
+
+    }
+ 
+    try:
+
+        response = requests.post(ollama_url, json=payload, stream=False)
+
+        response.raise_for_status()
+
+        response_data = response.json()
+
+        if "response" in response_data:
+
+            return response_data["response"]
+
+        elif "message" in response_data and "content" in response_data["message"]:
+
+            return response_data["message"]["content"]
+
+        else:
+
+            return "Ollama returned an unexpected response format."
+
+    except requests.exceptions.ConnectionError:
+
+        st.error(
+
+            f"Could not connect to Ollama. Please ensure Ollama is running and '{ollama_model}' is pulled."
+
+        )
+
+        return "Sorry, I can't connect to the local AI model (Ollama). Is it running?"
+
+    except requests.exceptions.RequestException as e:
+
+        st.error(f"Error querying Ollama: {e}. Check if model '{ollama_model}' is available.")
+
+        print(f"Ollama Request Error: {e}, Response: {response.text if 'response' in locals() else 'N/A'}")
+
+        return "Sorry, there was an error with the local AI model."
+
+    except json.JSONDecodeError:
+
+        st.error("Error decoding JSON response from Ollama. Check Ollama server logs.")
+
+        return "Sorry, I received an unreadable response from the local AI model."
+ 
+# --- Gemini Function ---
+
+def get_gemini_response(user_question, context_text):
+
+    """Generates a response from Gemini."""
+
+    model_name = "gemini-1.5-flash"  # Or "gemini-1.5-pro"
+
+    try:
+
+        model = genai.GenerativeModel(model_name)
+
+    except Exception as e:
+
+        st.error(
+
+            f"Could not load model '{model_name}'. Check your API key and model availability. Error: {e}")
+
+        return "Sorry, I couldn't connect to the AI model."
+ 
+    prompt = f"""
+
+    Answer the question as detailed as possible from the provided context, make sure to provide all the details.
+
+    If the answer is not available in the provided context, just say, "answer is not available in the context", don't provide the wrong answer\n\n
+
+    Context:\n {context_text}?\n
+
+    Question: \n{user_question}\n
+ 
+    Answer:
+
+    """
+
+    try:
+
+        response = model.generate_content(prompt)
+
+        if response and response.text:
+
+            return response.text
+
+        else:
+
+            return "No relevant answer could be generated."
+
+    except Exception as e:
+
+        print(f"Error generating response from Gemini: {e}")
+
+        return "Sorry, I encountered an error while generating a response."
+ 
+ 
+def process_user_question(user_question, selected_model):
+
+    """
+
+    Handles the user's question, retrieves context, and gets the LLM's response
+
+    based on the selected model.
+
+    """
+
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+
+    try:
+
+        new_db = FAISS.load_local(
+
+            "faiss_index", embeddings, allow_dangerous_deserialization=True
+
+        )
+
+    except ValueError as e:
+
+        st.error(
+
+            "Error loading FAISS index. Please ensure you have processed PDF files first. Details: {e}")
+
+        return "Error: Document index not found. Please upload and process PDFs."
+ 
+    docs = new_db.similarity_search(user_question)
+
+    context_text = "\n\n".join([doc.page_content for doc in docs])
+ 
+    # Get response from the selected LLM
+
+    assistant_response = get_llm_response(user_question, context_text, selected_model)
+
+    return assistant_response
+ 
+ 
+def main():
+
+    st.set_page_config("Chat with PDF")
+
+    st.title("Analyse Your PDF with LLM 💁")
+ 
+    # Initialize chat history in session state
+
+    if "messages" not in st.session_state:
+
+        st.session_state.messages = []
+ 
+    # Display chat messages from history on app rerun
+
+    for message in st.session_state.messages:
+
+        with st.chat_message(message["role"]):
+
+            st.markdown(message["content"])
+ 
+    # Sidebar for PDF processing
+
+    with st.sidebar:
+
+        st.title("PDF Processing")
+
+        pdf_docs = st.file_uploader(
+
+            "Upload your PDF Files and Click on 'Process PDFs'",
+
+            accept_multiple_files=True,
+
+        )
+
+        # Model selection dropdown
+
+        model_options = ["Llama 3.2 (Ollama)", "Gemini API"]
+
+        selected_model = st.selectbox("Choose your LLM:", model_options)
+ 
+        if st.button("Process PDFs"):
+
+            if pdf_docs:
+
+                with st.spinner("Processing PDF content..."):
+
+                    raw_text = get_pdf_text(pdf_docs)
+
+                    text_chunks = get_text_chunks(raw_text)
+
+                    get_vector_store(text_chunks)
+
+                    st.success("PDFs processed and index created!")
+
+                    st.session_state.messages = []
+
+                    st.rerun()
+
+            else:
+
+                st.warning("Please upload at least one PDF file.")
+ 
+    # Accept user input
+
+    if prompt := st.chat_input("Ask a question about the PDF..."):
+
+        # Add user message to chat history
+
+        st.session_state.messages.append({"role": "user", "content": prompt})
+
+        # Display user message in chat message container
+
+        with st.chat_message("user"):
+
+            st.markdown(prompt)
+ 
+        # Get assistant response
+
+        with st.chat_message("assistant"):
+
+            with st.spinner("Thinking..."):
+
+                assistant_response = process_user_question(prompt, selected_model)
+
+                st.markdown(assistant_response)
+
+        # Add assistant response to chat history
+
+        st.session_state.messages.append(
+
+            {"role": "assistant", "content": assistant_response})
+ 
+ 
+if __name__ == "__main__":
+
+    try:
+
+        main()
+
+    except Exception as e:
+
+        st.error(f"An unexpected error occurred: {e}")
+
+        print(f"Error executing main: {e}")
+
+ 

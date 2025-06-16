@@ -1,0 +1,171 @@
+import streamlit as st
+from PyPDF2 import PdfReader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+import os
+from langchain_google_genai import GoogleGenerativeAIEmbeddings # Still used for embeddings
+import google.generativeai as genai # Still used for embedding model configuration
+from langchain.vectorstores import FAISS
+from dotenv import load_dotenv
+import requests # New import for making HTTP requests to Ollama
+import json     # New import for handling JSON responses
+ 
+load_dotenv()
+# We don't need os.getenv("GOOGLE_API_KEY") directly for Ollama's LLM,
+# but genai.configure still needs it for GoogleGenerativeAIEmbeddings.
+# So, keep these lines for embeddings.
+os.getenv("GOOGLE_API_KEY")
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+ 
+# --- Helper Functions (unchanged, as they relate to PDF processing) ---
+ 
+def get_pdf_text(pdf_docs):
+    text=""
+    for pdf in pdf_docs:
+        pdf_reader= PdfReader(pdf)
+        for page in pdf_reader.pages:
+            text+= page.extract_text()
+    return text
+ 
+def get_text_chunks(text):
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=10000, chunk_overlap=1000)
+    chunks = text_splitter.split_text(text)
+    return chunks
+ 
+def get_vector_store(text_chunks):
+    # This still uses Google's embedding model
+    embeddings = GoogleGenerativeAIEmbeddings(model = "models/embedding-001")
+    vector_store = FAISS.from_texts(text_chunks, embedding=embeddings)
+    vector_store.save_local("faiss_index")
+ 
+# --- Modified Function for Ollama Integration ---
+ 
+def get_ollama_llama_response(user_question, context_text):
+    """Generates a response from Llama 3.2 via Ollama."""
+    # Ollama API endpoint (default for local setup)
+    ollama_url = "http://localhost:11434/api/generate"
+    ollama_model = "llama3.2" # Make sure you have this model pulled with `ollama pull llama3.2`
+ 
+    # Construct the prompt for Llama
+    # It's good practice to align the prompt format with the Llama model's expectations,
+    # but a general instruction-based prompt often works well.
+    prompt = f"""
+    You are an AI assistant tasked with answering questions based on the provided document context.
+    Instructions:
+    - Answer the question as detailed as possible from the provided context.
+    - Make sure to provide all the details from the context.
+    - If the answer is not available in the context, explicitly state "answer is not available in the context".
+    - Do not provide information not present in the context.
+ 
+    Context:
+    {context_text}
+ 
+    Question:
+    {user_question}
+ 
+    Answer:
+    """
+ 
+    # Prepare the request payload for Ollama
+    payload = {
+        "model": ollama_model,
+        "prompt": prompt,
+        "stream": False # Set to True if you want streaming responses (requires different handling)
+    }
+ 
+    try:
+        response = requests.post(ollama_url, json=payload, stream=False)
+        response.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
+ 
+        # Parse the JSON response
+        response_data = response.json()
+        # Ollama's API response structure might vary slightly, but 'response' usually holds the text
+        if "response" in response_data:
+            return response_data["response"]
+        elif "message" in response_data and "content" in response_data["message"]:
+             return response_data["message"]["content"]
+        else:
+            return "Ollama returned an unexpected response format."
+ 
+    except requests.exceptions.ConnectionError:
+        st.error(f"Could not connect to Ollama. Please ensure Ollama is running and '{ollama_model}' is pulled.")
+        return "Sorry, I can't connect to the local AI model (Ollama). Is it running?"
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error querying Ollama: {e}. Check if model '{ollama_model}' is available.")
+        print(f"Ollama Request Error: {e}, Response: {response.text if 'response' in locals() else 'N/A'}")
+        return "Sorry, there was an error with the local AI model."
+    except json.JSONDecodeError:
+        st.error("Error decoding JSON response from Ollama. Check Ollama server logs.")
+        return "Sorry, I received an unreadable response from the local AI model."
+ 
+ 
+def process_user_question(user_question):
+    """Handles the user's question, retrieves context, and gets Llama's response."""
+    embeddings = GoogleGenerativeAIEmbeddings(model = "models/embedding-001")
+    try:
+        # allow_dangerous_deserialization=True is kept as FAISS explicitly demands it
+        new_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+    except ValueError as e:
+        st.error(f"Error loading FAISS index. Please ensure you have processed PDF files first. Details: {e}")
+        return "Error: Document index not found. Please upload and process PDFs."
+ 
+    docs = new_db.similarity_search(user_question)
+    context_text = "\n\n".join([doc.page_content for doc in docs])
+ 
+    # Get response from Llama via Ollama
+    assistant_response = get_ollama_llama_response(user_question, context_text)
+    return assistant_response
+ 
+# --- Main Streamlit Application (mostly unchanged) ---
+ 
+def main():
+    st.set_page_config("Chat with PDF")
+    st.title("Analyse Your PDF with Llama 3.2 💁") # Updated title
+ 
+    # Initialize chat history in session state
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+ 
+    # Display chat messages from history on app rerun
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+ 
+    # Accept user input
+    if prompt := st.chat_input("Ask a question about the PDF..."):
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        # Display user message in chat message container
+        with st.chat_message("user"):
+            st.markdown(prompt)
+ 
+        # Get assistant response
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                assistant_response = process_user_question(prompt)
+                st.markdown(assistant_response)
+        # Add assistant response to chat history
+        st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+ 
+    # Sidebar for PDF processing
+    with st.sidebar:
+        st.title("PDF Processing")
+        pdf_docs = st.file_uploader("Upload your PDF Files and Click on 'Process PDFs'", accept_multiple_files=True)
+        if st.button("Process PDFs"):
+            if pdf_docs:
+                with st.spinner("Processing PDF content..."):
+                    raw_text = get_pdf_text(pdf_docs)
+                    text_chunks = get_text_chunks(raw_text)
+                    get_vector_store(text_chunks)
+                    st.success("PDFs processed and index created!")
+                    # Optional: Clear chat history after new PDFs are processed
+                    st.session_state.messages = [] 
+                    st.rerun() 
+            else:
+                st.warning("Please upload at least one PDF file.")
+ 
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {e}")
+        print(f"Error executing main: {e}")

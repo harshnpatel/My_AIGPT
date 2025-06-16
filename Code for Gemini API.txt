@@ -1,0 +1,131 @@
+import streamlit as st
+from PyPDF2 import PdfReader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+import os
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+import google.generativeai as genai
+from langchain.vectorstores import FAISS
+from dotenv import load_dotenv
+ 
+load_dotenv()
+os.getenv("GOOGLE_API_KEY")
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+ 
+# --- Helper Functions (unchanged) ---
+def get_pdf_text(pdf_docs):
+    text=""
+    for pdf in pdf_docs:
+        pdf_reader= PdfReader(pdf)
+        for page in pdf_reader.pages:
+            text+= page.extract_text()
+    return text
+ 
+def get_text_chunks(text):
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=10000, chunk_overlap=1000)
+    chunks = text_splitter.split_text(text)
+    return chunks
+ 
+def get_vector_store(text_chunks):
+    embeddings = GoogleGenerativeAIEmbeddings(model = "models/embedding-001")
+    vector_store = FAISS.from_texts(text_chunks, embedding=embeddings)
+    vector_store.save_local("faiss_index")
+ 
+# --- New/Modified Functions for Chat Interface ---
+ 
+def get_gemini_response(user_question, context_text):
+    """Generates a response from Gemini using the provided context and question."""
+    model_name = "gemini-1.5-flash" # Or "gemini-1.5-pro" if preferred
+ 
+    try:
+        model = genai.GenerativeModel(model_name)
+    except Exception as e:
+        st.error(f"Could not load model '{model_name}'. Check your API key and model availability. Error: {e}")
+        return "Sorry, I couldn't connect to the AI model."
+ 
+    prompt = f"""
+    Answer the question as detailed as possible from the provided context, make sure to provide all the details.
+    If the answer is not available in the provided context, just say, "answer is not available in the context", don't provide the wrong answer\n\n
+    Context:\n {context_text}?\n
+    Question: \n{user_question}\n
+ 
+    Answer:
+    """
+    try:
+        response = model.generate_content(prompt)
+        if response and response.text:
+            return response.text
+        else:
+            return "No relevant answer could be generated."
+    except Exception as e:
+        print(f"Error generating response from Gemini: {e}")
+        return "Sorry, I encountered an error while generating a response."
+ 
+def process_user_question(user_question):
+    """Handles the user's question, retrieves context, and gets Gemini's response."""
+    embeddings = GoogleGenerativeAIEmbeddings(model = "models/embedding-001")
+    try:
+        new_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+    except ValueError as e:
+        st.error(f"Error loading FAISS index. Please ensure you have processed PDF files first. Details: {e}")
+        return "Error: Document index not found. Please upload and process PDFs."
+ 
+    docs = new_db.similarity_search(user_question)
+    context_text = "\n\n".join([doc.page_content for doc in docs])
+ 
+    # Get response from Gemini
+    assistant_response = get_gemini_response(user_question, context_text)
+    return assistant_response
+ 
+# --- Main Streamlit Application ---
+def main():
+    st.set_page_config("Chat with PDF")
+    st.title("Chat with PDF using Gemini💁")
+ 
+    # Initialize chat history in session state
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+ 
+    # Display chat messages from history on app rerun
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+ 
+    # Accept user input
+    if prompt := st.chat_input("Ask a question about the PDF..."):
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        # Display user message in chat message container
+        with st.chat_message("user"):
+            st.markdown(prompt)
+ 
+        # Get assistant response
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                assistant_response = process_user_question(prompt)
+                st.markdown(assistant_response)
+        # Add assistant response to chat history
+        st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+ 
+    # Sidebar for PDF processing
+    with st.sidebar:
+        st.title("PDF Processing")
+        pdf_docs = st.file_uploader("Upload your PDF Files and Click on 'Process PDFs'", accept_multiple_files=True)
+        if st.button("Process PDFs"):
+            if pdf_docs:
+                with st.spinner("Processing PDF content..."):
+                    raw_text = get_pdf_text(pdf_docs)
+                    text_chunks = get_text_chunks(raw_text)
+                    get_vector_store(text_chunks)
+                    st.success("PDFs processed and index created!")
+                    # Optional: Clear chat history after new PDFs are processed
+                    st.session_state.messages = [] 
+                    st.rerun() # Corrected: Use st.rerun() instead of st.experimental_rerun()
+            else:
+                st.warning("Please upload at least one PDF file.")
+ 
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {e}")
+        print(f"Error executing main: {e}")
